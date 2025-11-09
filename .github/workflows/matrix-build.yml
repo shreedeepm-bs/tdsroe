@@ -1,0 +1,53 @@
+name: Matrix Build with Artifacts (bcf8045)
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }} / Node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: [16, 18, 20]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: matrix-bcf8045
+        run: |
+          echo "Starting matrix job on ${{ matrix.os }} with Node ${{ matrix.node }}"
+          node --version
+          echo "Git SHA: $GITHUB_SHA"
+          echo "Run ID: $GITHUB_RUN_ID"
+
+      - name: Generate build artifact
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          cat > artifacts/output-${{ matrix.os }}-node${{ matrix.node }}.txt <<'EOF'
+          Build Output
+          ------------
+          OS: ${{ matrix.os }}
+          Node: ${{ matrix.node }}
+          Date: $(date)
+          Commit: $GITHUB_SHA
+          Notes: Example content to ensure non-empty artifact for validation.
+          EOF
+          # Confirm non-empty
+          test -s "artifacts/output-${{ matrix.os }}-node${{ matrix.node }}.txt"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-bcf8045-${{ matrix.os }}-node${{ matrix.node }}
+          path: artifacts/output-${{ matrix.os }}-node${{ matrix.node }}.txt
+          if-no-files-found: error
